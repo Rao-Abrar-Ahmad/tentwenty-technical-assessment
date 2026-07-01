@@ -1,5 +1,4 @@
-"use client";`r`n`r`n/* eslint-disable react-hooks/set-state-in-effect */
-
+"use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";

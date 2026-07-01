@@ -1,5 +1,4 @@
-"use client";`r`n`r`n/* eslint-disable react-hooks/set-state-in-effect */
-
+"use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -136,11 +135,11 @@ export default function TimesheetDetailPage() {
     setDeleteOpen(true);
   };
 
-  type EntryFormData = {`r`n    project: string;`r`n    typeOfWork: string;`r`n    taskDescription: string;`r`n    hoursWorked: number;`r`n    date: Date;`r`n  };`r`n`r`n  const handleFormSubmit = async (formData: EntryFormData) => {
+  const handleFormSubmit = async (formData: any) => {
     const url = selectedEntry
       ? `/api/timesheets/${id}/entries/${selectedEntry._id}`
       : `/api/timesheets/${id}/entries`;
-    
+
     const method = selectedEntry ? "PUT" : "POST";
 
     try {
@@ -201,17 +200,17 @@ export default function TimesheetDetailPage() {
   const formatHeaderRange = (startStr: string, endStr: string) => {
     const start = new Date(startStr);
     const end = new Date(endStr);
-    
+
     const startDay = start.getUTCDate();
     const startMonth = start.toLocaleString("en-US", { month: "long", timeZone: "UTC" });
-    
+
     const endDay = end.getUTCDate();
     const endMonth = end.toLocaleString("en-US", { month: "long", timeZone: "UTC" });
-    
+
     if (startMonth !== endMonth) {
       return `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
     }
-    
+
     return `${startDay}–${endDay} ${startMonth}`;
   };
 
@@ -259,7 +258,7 @@ export default function TimesheetDetailPage() {
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div className="bg-white rounded-2xl border border-gray-150 shadow-sm p-6 sm:p-8 space-y-8">
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-gray-100 pb-6">
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
@@ -272,7 +271,7 @@ export default function TimesheetDetailPage() {
                 {formatHeaderRange(timesheet.weekStart, timesheet.weekEnd)}
               </p>
             </div>
-            
+
             <div className="w-full sm:w-64">
               <ProgressBar hours={totalHours} />
             </div>
@@ -286,7 +285,7 @@ export default function TimesheetDetailPage() {
 
               return (
                 <div key={dayDate.toISOString()} className="flex flex-col md:flex-row gap-4 md:gap-6 items-start">
-                  
+
                   <div className="w-full md:w-1/5 pt-1 select-none">
                     <span className="block font-bold text-gray-900 text-sm">
                       {getDayName(dayDate)}
