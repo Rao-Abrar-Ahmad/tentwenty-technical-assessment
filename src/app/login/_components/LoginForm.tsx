@@ -70,10 +70,10 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium text-gray-700">
-          Email address
+    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md">
+      <div className="">
+        <label htmlFor="email" className="label">
+          Email
         </label>
         <Input
           id="email"
@@ -87,7 +87,7 @@ export default function LoginForm() {
         {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
       </div>
 
-      <div className="space-y-2">
+      <div className="">
         <label htmlFor="password" className="text-sm font-medium text-gray-700">
           Password
         </label>

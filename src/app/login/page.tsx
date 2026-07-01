@@ -28,13 +28,10 @@ export default function LoginPage() {
       {/* Right panel: Login Form */}
       <div className="w-full h-2/3 md:h-full md:w-1/2 bg-white flex flex-col justify-center p-8 sm:p-16 lg:p-24 overflow-y-auto">
         <div className="w-full max-w-md mx-auto space-y-8">
-          <div className="space-y-2">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+          <div className="mb-3">
+            <h2 className="text-xl font-bold tracking-tight text-gray-900">
               Welcome back
             </h2>
-            <p className="text-sm text-gray-500">
-              Enter your credentials to access your timesheets dashboard.
-            </p>
           </div>
 
           <Suspense fallback={<div className="text-gray-500 text-sm">Loading login form...</div>}>
