@@ -14,20 +14,24 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('Doesnt receive credentials')
           throw new Error("Invalid email or password");
         }
 
         await connectDB();
         const user = await User.findOne({ email: credentials.email.toLowerCase() });
         if (!user) {
+          console.log('User not found');
           throw new Error("Invalid email or password");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) {
+          console.log('Password doesnt match');
           throw new Error("Invalid email or password");
         }
 
+        console.log('User logged in');
         return {
           id: user._id.toString(),
           email: user.email,
