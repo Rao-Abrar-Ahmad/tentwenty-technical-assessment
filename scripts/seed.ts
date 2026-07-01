@@ -14,6 +14,7 @@ if (!MONGODB_URI) {
 }
 
 async function seed() {
+  console.log('Start connecting to DB')
   await mongoose.connect(MONGODB_URI!);
   console.log("Connected to MongoDB for seeding.");
 
