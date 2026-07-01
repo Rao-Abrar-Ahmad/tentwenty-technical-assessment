@@ -1,8 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { connectDB } from "./mongodb";
-import { User } from "@/models/User";
+import { getSupabaseAdmin } from "./supabase";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,26 +13,31 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log('Doesnt receive credentials')
           throw new Error("Invalid email or password");
         }
 
-        await connectDB();
-        const user = await User.findOne({ email: credentials.email.toLowerCase() });
+        const { data: user, error } = await getSupabaseAdmin()
+          .from("users")
+          .select("id, email, name, password_hash")
+          .eq("email", credentials.email.toLowerCase())
+          .maybeSingle();
+
+        if (error) {
+          console.error("Supabase user lookup failed:", error);
+          throw new Error("Invalid email or password");
+        }
+
         if (!user) {
-          console.log('User not found');
           throw new Error("Invalid email or password");
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+        const isValid = await bcrypt.compare(credentials.password, user.password_hash);
         if (!isValid) {
-          console.log('Password doesnt match');
           throw new Error("Invalid email or password");
         }
 
-        console.log('User logged in');
         return {
-          id: user._id.toString(),
+          id: user.id,
           email: user.email,
           name: user.name,
         };
@@ -62,3 +66,5 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+

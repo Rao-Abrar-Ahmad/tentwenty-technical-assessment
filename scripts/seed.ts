@@ -1,58 +1,123 @@
 import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
-import { User } from "../src/models/User";
-import { Timesheet } from "../src/models/Timesheet";
 import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config({ path: ".env.local" });
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!MONGODB_URI) {
-  console.error("Please define the MONGODB_URI environment variable in .env.local");
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("Please define SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local");
   process.exit(1);
 }
 
-async function seed() {
-  console.log('Start connecting to DB')
-  await mongoose.connect(MONGODB_URI!);
-  console.log("Connected to MongoDB for seeding.");
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
-  await User.deleteMany({});
-  await Timesheet.deleteMany({});
+const parseDate = (d: string) => new Date(Date.parse(d)).toISOString();
+
+type EntrySeed = {
+  date: string;
+  project: string;
+  typeOfWork: string;
+  taskDescription: string;
+  hoursWorked: number;
+};
+
+async function createTimesheet(input: {
+  userId: string;
+  year: number;
+  weekNumber: number;
+  weekStart: string;
+  weekEnd: string;
+  entries: EntrySeed[];
+}) {
+  const { data: timesheet, error: timesheetError } = await supabase
+    .from("timesheets")
+    .insert({
+      user_id: input.userId,
+      year: input.year,
+      week_number: input.weekNumber,
+      week_start: input.weekStart,
+      week_end: input.weekEnd,
+    })
+    .select("id")
+    .single();
+
+  if (timesheetError) {
+    throw timesheetError;
+  }
+
+  if (input.entries.length === 0) {
+    return;
+  }
+
+  const { error: entriesError } = await supabase.from("timesheet_entries").insert(
+    input.entries.map((entry) => ({
+      timesheet_id: timesheet.id,
+      date: entry.date,
+      project: entry.project,
+      type_of_work: entry.typeOfWork,
+      task_description: entry.taskDescription,
+      hours_worked: entry.hoursWorked,
+    }))
+  );
+
+  if (entriesError) {
+    throw entriesError;
+  }
+}
+
+async function seed() {
+  console.log("Connected to Supabase for seeding.");
+
+  await supabase.from("timesheet_entries").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await supabase.from("timesheets").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await supabase.from("users").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   console.log("Cleared existing users and timesheets.");
 
   const passwordHash = await bcrypt.hash("password123", 10);
 
-  const user1 = await User.create({
-    email: "user@example.com",
-    name: "John Doe",
-    passwordHash,
-    createdAt: new Date(),
-  });
+  const { data: users, error: usersError } = await supabase
+    .from("users")
+    .insert([
+      {
+        email: "user@example.com",
+        name: "John Doe",
+        password_hash: passwordHash,
+      },
+      {
+        email: "user1@example.com",
+        name: "Jane Smith",
+        password_hash: passwordHash,
+      },
+    ])
+    .select("id, email");
 
-  const user2 = await User.create({
-    email: "user1@example.com",
-    name: "Jane Smith",
-    passwordHash,
-    createdAt: new Date(),
-  });
+  if (usersError) {
+    throw usersError;
+  }
+
+  const user1 = users.find((user) => user.email === "user@example.com");
+  if (!user1) {
+    throw new Error("Seed user was not returned by Supabase");
+  }
 
   console.log("Seeded Users:");
   console.log("1. Email: user@example.com, Password: password123");
   console.log("2. Email: user1@example.com, Password: password123");
 
-  const parseDate = (d: string) => new Date(Date.parse(d));
-
-  // Week 25: June 15-19, 2026 (Completed, 42 hours)
-  const w25Start = parseDate("2026-06-15T00:00:00Z");
-  const w25End = parseDate("2026-06-19T23:59:59Z");
-  await Timesheet.create({
-    userId: user1._id,
+  await createTimesheet({
+    userId: user1.id,
     year: 2026,
     weekNumber: 25,
-    weekStart: w25Start,
-    weekEnd: w25End,
+    weekStart: parseDate("2026-06-15T00:00:00Z"),
+    weekEnd: parseDate("2026-06-19T23:59:59Z"),
     entries: [
       {
         date: parseDate("2026-06-15T09:00:00Z"),
@@ -92,15 +157,12 @@ async function seed() {
     ],
   });
 
-  // Week 26: June 22-26, 2026 (Incomplete, 15 hours)
-  const w26Start = parseDate("2026-06-22T00:00:00Z");
-  const w26End = parseDate("2026-06-26T23:59:59Z");
-  await Timesheet.create({
-    userId: user1._id,
+  await createTimesheet({
+    userId: user1.id,
     year: 2026,
     weekNumber: 26,
-    weekStart: w26Start,
-    weekEnd: w26End,
+    weekStart: parseDate("2026-06-22T00:00:00Z"),
+    weekEnd: parseDate("2026-06-26T23:59:59Z"),
     entries: [
       {
         date: parseDate("2026-06-22T09:00:00Z"),
@@ -119,21 +181,17 @@ async function seed() {
     ],
   });
 
-  // Week 27: June 29 - July 3, 2026 (Missing, 0 entries)
-  const w27Start = parseDate("2026-06-29T00:00:00Z");
-  const w27End = parseDate("2026-07-03T23:59:59Z");
-  await Timesheet.create({
-    userId: user1._id,
+  await createTimesheet({
+    userId: user1.id,
     year: 2026,
     weekNumber: 27,
-    weekStart: w27Start,
-    weekEnd: w27End,
+    weekStart: parseDate("2026-06-29T00:00:00Z"),
+    weekEnd: parseDate("2026-07-03T23:59:59Z"),
     entries: [],
   });
 
-  console.log("Seeded sample timesheets for john@example.com (Completed, Incomplete, Missing).");
-  await mongoose.disconnect();
-  console.log("Database disconnected. Seeding done.");
+  console.log("Seeded sample timesheets for user@example.com (Completed, Incomplete, Missing).");
+  console.log("Seeding done.");
 }
 
 seed().catch((err) => {

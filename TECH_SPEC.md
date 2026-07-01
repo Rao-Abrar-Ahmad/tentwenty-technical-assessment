@@ -6,7 +6,7 @@ Handoff spec for implementation by a coding agent. This document is self-contain
 
 - **Framework**: Next.js (latest, App Router), TypeScript
 - **Auth**: NextAuth.js, Credentials provider
-- **Database**: MongoDB (native driver or Mongoose — Mongoose recommended for schema clarity)
+- **Database**: Supabase Postgres via `@supabase/supabase-js` in server-side route handlers
 - **Validation**: Zod (shared schemas for API route input validation + form validation on client)
 - **Styling**: Tailwind CSS
 - **Components**: shadcn/ui
@@ -16,65 +16,62 @@ Handoff spec for implementation by a coding agent. This document is self-contain
 
 ### Environment variables
 
-```
-MONGODB_URI=
+```bash
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=          # http://localhost:3000 in dev
 ```
-
 ## 2. Data Model
 
-### `users` collection
+Run `supabase-schema.sql` before starting the app or running the seed script.
+
+### `users` table
 
 ```ts
 {
-  _id: ObjectId,
+  id: uuid,
   email: string,          // unique, lowercase
-  passwordHash: string,   // bcrypt
+  password_hash: string,  // bcrypt
   name: string,
-  createdAt: Date
+  created_at: timestamptz
 }
 ```
 
-Seeded only — no signup flow. See §7 Seed Script.
+Seeded only - no signup flow. See section 7 Seed Script.
 
-### `timesheets` collection
+### `timesheets` table
 
 ```ts
 {
-  _id: ObjectId,
-  userId: ObjectId,       // owner — every query is scoped to req.session.user.id
+  id: uuid,
+  user_id: uuid,          // owner - every query is scoped to req.session.user.id
   year: number,           // e.g. 2026
-  weekNumber: number,     // ISO week number, 1–53
-  weekStart: Date,        // Monday of that ISO week
-  weekEnd: Date,          // Friday of that ISO week
-  entries: [
-    {
-      _id: ObjectId,
-      date: Date,          // must fall Mon–Fri within weekStart/weekEnd
-      project: string,     // one of the hardcoded PROJECT list
-      typeOfWork: string,  // one of the hardcoded TYPE_OF_WORK list
-      taskDescription: string,
-      hoursWorked: number  // > 0
-    }
-  ],
-  createdAt: Date,
-  updatedAt: Date
+  week_number: number,    // ISO week number, 1-53
+  week_start: timestamptz, // Monday of that ISO week
+  week_end: timestamptz,   // Friday of that ISO week
+  created_at: timestamptz,
+  updated_at: timestamptz
 }
 ```
 
-Unique index on `{ userId: 1, year: 1, weekNumber: 1 }` — one Timesheet per user per ISO week. This is what makes "does a document exist for this week" a simple lookup.
+Unique constraint on `(user_id, year, week_number)` - one Timesheet per user per ISO week. This is what makes "does a row exist for this week" a simple lookup.
 
-**Status is never stored.** Always computed from `entries`:
+### `timesheet_entries` table
 
 ```ts
-function getStatus(entries: Entry[]): 'Missing' | 'Incomplete' | 'Completed' {
-  if (entries.length === 0) return 'Missing';
-  const total = entries.reduce((sum, e) => sum + e.hoursWorked, 0);
-  return total >= 40 ? 'Completed' : 'Incomplete';
+{
+  id: uuid,
+  timesheet_id: uuid,     // references timesheets.id, cascade delete
+  date: timestamptz,      // must fall Mon-Fri within week_start/week_end
+  project: string,        // one of the hardcoded PROJECT list
+  type_of_work: string,   // one of the hardcoded TYPE_OF_WORK list
+  task_description: string,
+  hours_worked: number    // > 0
 }
 ```
 
+API responses map Supabase snake_case columns back to the existing camelCase UI contract, including `_id` for `timesheet.id` and entry ids.
 ### Hardcoded lists (used in Add/Edit Entry form dropdowns)
 
 ```ts
@@ -127,7 +124,7 @@ export const loginSchema = z.object({
   - Document exists, Status Completed → **View**
   - All three actions navigate to `/timesheets/[id]`; Create additionally performs `POST /api/timesheets` first to obtain the `id`.
 - **Status sort order**: severity order Missing → Incomplete → Completed, not alphabetical.
-- Empty Timesheet documents (0 entries) are valid and expected — they still display as "Missing." See ADR 0002.
+- Empty Timesheet rows (0 entries) are valid and expected — they still display as "Missing." See ADR 0002.
 
 ## 4. API Routes (internal — all client data fetching goes through these, never direct DB/mock access from components)
 
@@ -150,7 +147,7 @@ Query params:
 
 Logic:
 1. Compute every ISO week that intersects `[from, to]`.
-2. Fetch all existing Timesheet documents for this user within that week range.
+2. Fetch all existing Timesheet rows for this user within that week range.
 3. Left-join: weeks without a matching document become virtual rows `{ id: null, weekNumber, year, weekStart, weekEnd, status: 'Missing', entries: [] }`.
 4. Apply `status` filter if present.
 5. Sort (status uses severity order: Missing=0, Incomplete=1, Completed=2).
@@ -178,7 +175,7 @@ Response:
 Body: `{ year, weekNumber }`. Computes `weekStart`/`weekEnd` server-side from ISO week (do not trust client-provided dates). Upserts — if a document already exists for `{ userId, year, weekNumber }`, return the existing one instead of erroring (defensive against double-clicks). Returns `{ id }`.
 
 ### `GET /api/timesheets/[id]`
-Returns the full Timesheet document (must belong to `req.session.user.id` — 404 otherwise, not 403, to avoid leaking existence). Response includes `entries` grouped is NOT done server-side — return flat `entries` array; grouping by day happens client-side for rendering.
+Returns the full Timesheet row (must belong to `req.session.user.id` — 404 otherwise, not 403, to avoid leaking existence). Response includes `entries` grouped is NOT done server-side — return flat `entries` array; grouping by day happens client-side for rendering.
 
 ### `POST /api/timesheets/[id]/entries`
 Body validated against `entryInputSchema`. Appends to `entries` array. Returns the updated Timesheet.
@@ -217,7 +214,7 @@ Protected by middleware.
 - Footer: rows-per-page select (5 / 10), pagination with numbered page buttons + Prev/Next
 
 ### `/timesheets/[id]`
-Protected by middleware. `id` is always a real Mongo `_id` (see ADR 0002).
+Protected by middleware. `id` is always a real Supabase UUID (see ADR 0002).
 
 - Card, top heading "This Week Timesheet," date range on the right (e.g. "21–26 January")
 - Left side of header: progress bar showing `X/40 hours` and a percentage (e.g. "50%"), capped visually at 100% even if hours exceed 40
@@ -240,9 +237,9 @@ Protected by middleware. `id` is always a real Mongo `_id` (see ADR 0002).
 
 ## 7. Seed Script
 
-`scripts/seed.ts` (run via `npm run seed`), connects to `MONGODB_URI` and:
+`scripts/seed.ts` (run via `npm run seed`), connects to Supabase using `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` and:
 - Inserts 1–2 mock users into `users` (bcrypt-hash a known password, log the plaintext credentials to console for local testing)
-- Inserts a handful of sample Timesheet documents across recent weeks for one seeded user, covering all three Status states (one with 0 entries → Missing, one with <40 hrs → Incomplete, one with ≥40 hrs → Completed) so the dashboard has representative data on first run
+- Inserts a handful of sample Timesheet rows and `timesheet_entries` rows across recent weeks for one seeded user, covering all three Status states (one with 0 entries → Missing, one with <40 hrs → Incomplete, one with ≥40 hrs → Completed) so the dashboard has representative data on first run
 
 ## 8. Suggested Folder Structure
 
@@ -275,15 +272,12 @@ src/
       EntryRow.tsx
       EntryFormModal.tsx
   lib/
-    mongodb.ts
+    supabase.ts`n    supabaseMappers.ts
     auth.ts              # NextAuth config
     zodSchemas.ts
     status.ts             # getStatus(), week helpers
     constants.ts           # PROJECTS, TYPES_OF_WORK
-  models/
-    User.ts
-    Timesheet.ts
-  middleware.ts
+    middleware.ts
 CONTEXT.md
 docs/adr/0001-computed-status.md
 docs/adr/0002-eager-timesheet-creation.md
@@ -293,4 +287,11 @@ docs/adr/0002-eager-timesheet-creation.md
 
 - `CONTEXT.md` — canonical glossary (Timesheet, Entry, Status, Week, Row Action)
 - `docs/adr/0001-computed-status.md` — why Status is computed, not stored
-- `docs/adr/0002-eager-timesheet-creation.md` — why Timesheet docs are created eagerly on "Create" click, giving every detail-page route a real Mongo `_id`
+- `docs/adr/0002-eager-timesheet-creation.md` — why Timesheet docs are created eagerly on "Create" click, giving every detail-page route a real Supabase UUID
+
+## 10. Supabase setup
+
+Run the SQL in supabase-schema.sql in the Supabase SQL editor before running 
+pm run seed. The application uses the service-role key only on the server in route handlers and the seed script; do not expose it as a NEXT_PUBLIC_ variable.
+
+

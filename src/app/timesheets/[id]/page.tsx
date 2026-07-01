@@ -1,9 +1,9 @@
-"use client";
+"use client";`r`n`r`n/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Clock, LogOut, ArrowLeft, Plus, Calendar, User } from "lucide-react";
+import { LogOut, ArrowLeft, Plus, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/timesheet-detail/ProgressBar";
 import EntryRow from "@/components/timesheet-detail/EntryRow";
@@ -136,7 +136,7 @@ export default function TimesheetDetailPage() {
     setDeleteOpen(true);
   };
 
-  const handleFormSubmit = async (formData: any) => {
+  type EntryFormData = {`r`n    project: string;`r`n    typeOfWork: string;`r`n    taskDescription: string;`r`n    hoursWorked: number;`r`n    date: Date;`r`n  };`r`n`r`n  const handleFormSubmit = async (formData: EntryFormData) => {
     const url = selectedEntry
       ? `/api/timesheets/${id}/entries/${selectedEntry._id}`
       : `/api/timesheets/${id}/entries`;
@@ -359,3 +359,4 @@ export default function TimesheetDetailPage() {
     </div>
   );
 }
+

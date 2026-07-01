@@ -1,4 +1,4 @@
-"use client";
+"use client";`r`n`r`n/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect } from "react";
 import {
@@ -239,3 +239,4 @@ export default function EntryFormModal({
     </Dialog>
   );
 }
+

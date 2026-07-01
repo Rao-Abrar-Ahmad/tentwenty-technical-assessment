@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Timesheet } from "@/models/Timesheet";
 import { createTimesheetSchema } from "@/lib/zodSchemas";
 import { getStatus, getWeeksInIntersection, getWeekStartAndEnd } from "@/lib/status";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { mapTimesheet, SupabaseTimesheetRow } from "@/lib/supabaseMappers";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -33,8 +33,6 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const pageSize = parseInt(searchParams.get("pageSize") || "5", 10);
 
-  await connectDB();
-
   const weeksList = getWeeksInIntersection(fromDate, toDate);
 
   if (weeksList.length === 0) {
@@ -46,19 +44,26 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const queryWeeks = weeksList.map((w) => ({ year: w.year, weekNumber: w.weekNumber }));
-  
-  const existingTimesheets = await Timesheet.find({
-    userId: session.user.id,
-    $or: queryWeeks,
-  });
+  const { data, error } = await getSupabaseAdmin()
+    .from("timesheets")
+    .select("id, user_id, year, week_number, week_start, week_end, created_at, updated_at, entries:timesheet_entries(id, date, project, type_of_work, task_description, hours_worked, created_at)")
+    .eq("user_id", session.user.id)
+    .lte("week_start", toDate.toISOString())
+    .gte("week_end", fromDate.toISOString());
+
+  if (error) {
+    console.error("Error fetching timesheets:", error);
+    return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "content-type": "application/json" } });
+  }
+
+  const existingTimesheets = (data ?? []).map((row) => mapTimesheet(row as SupabaseTimesheetRow));
 
   let rows = weeksList.map((w) => {
     const existing = existingTimesheets.find((t) => t.year === w.year && t.weekNumber === w.weekNumber);
     const entries = existing ? existing.entries : [];
     const status = getStatus(entries);
     return {
-      id: existing ? existing._id.toString() : null,
+      id: existing ? existing._id : null,
       weekNumber: w.weekNumber,
       year: w.year,
       weekStart: w.weekStart.toISOString(),
@@ -76,7 +81,7 @@ export async function GET(req: NextRequest) {
     Missing: 0,
     Incomplete: 1,
     Completed: 2,
-  };
+  } as const;
 
   rows.sort((a, b) => {
     let comparison = 0;
@@ -119,31 +124,33 @@ export async function POST(req: NextRequest) {
     }
 
     const { year, weekNumber } = result.data;
-    await connectDB();
+    const { weekStart, weekEnd } = getWeekStartAndEnd(year, weekNumber);
 
-    let timesheet = await Timesheet.findOne({
-      userId: session.user.id,
-      year,
-      weekNumber,
-    });
+    const { data, error } = await getSupabaseAdmin()
+      .from("timesheets")
+      .upsert(
+        {
+          user_id: session.user.id,
+          year,
+          week_number: weekNumber,
+          week_start: weekStart.toISOString(),
+          week_end: weekEnd.toISOString(),
+        },
+        { onConflict: "user_id,year,week_number" }
+      )
+      .select("id")
+      .single();
 
-    if (!timesheet) {
-      const { weekStart, weekEnd } = getWeekStartAndEnd(year, weekNumber);
-      timesheet = await Timesheet.create({
-        userId: session.user.id,
-        year,
-        weekNumber,
-        weekStart,
-        weekEnd,
-        entries: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+    if (error) {
+      console.error("Error upserting timesheet:", error);
+      return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "content-type": "application/json" } });
     }
 
-    return NextResponse.json({ id: timesheet._id.toString() });
+    return NextResponse.json({ id: data.id });
   } catch (error) {
     console.error("Error creating timesheet:", error);
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "content-type": "application/json" } });
   }
 }
+
+

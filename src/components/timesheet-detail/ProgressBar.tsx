@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Progress } from "@/components/ui/progress";
 
 interface ProgressBarProps {
   hours: number;
@@ -35,3 +34,4 @@ export default function ProgressBar({ hours }: ProgressBarProps) {
     </div>
   );
 }
+

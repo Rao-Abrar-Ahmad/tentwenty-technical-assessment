@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Timesheet } from "@/models/Timesheet";
 import { entryInputSchema } from "@/lib/zodSchemas";
-import mongoose from "mongoose";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import { mapTimesheet, SupabaseTimesheetRow } from "@/lib/supabaseMappers";
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+async function getOwnedTimesheet(id: string, userId: string) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("timesheets")
+    .select("id, user_id, year, week_number, week_start, week_end, created_at, updated_at, entries:timesheet_entries(id, date, project, type_of_work, task_description, hours_worked, created_at)")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapTimesheet(data as SupabaseTimesheetRow) : null;
+}
 
 export async function POST(
   req: NextRequest,
@@ -17,7 +33,7 @@ export async function POST(
 
   const { id } = await props.params;
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!uuidPattern.test(id)) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
@@ -28,21 +44,15 @@ export async function POST(
       return new NextResponse(JSON.stringify({ error: result.error.issues }), { status: 400, headers: { "content-type": "application/json" } });
     }
 
-    const { date, project, typeOfWork, taskDescription, hoursWorked } = result.data;
-
-    await connectDB();
-
-    const timesheet = await Timesheet.findOne({
-      _id: id,
-      userId: session.user.id,
-    });
+    const timesheet = await getOwnedTimesheet(id, session.user.id);
 
     if (!timesheet) {
       return new NextResponse("Not Found", { status: 404 });
     }
 
+    const { date, project, typeOfWork, taskDescription, hoursWorked } = result.data;
     const entryDate = new Date(date);
-    const day = entryDate.getUTCDay(); // 0 is Sunday, 6 is Saturday
+    const day = entryDate.getUTCDay();
     if (day === 0 || day === 6) {
       return new NextResponse(JSON.stringify({ error: "Entries can only be added for weekdays (Monday to Friday)" }), { status: 400, headers: { "content-type": "application/json" } });
     }
@@ -55,19 +65,32 @@ export async function POST(
       return new NextResponse(JSON.stringify({ error: "Date must fall within the timesheet week" }), { status: 400, headers: { "content-type": "application/json" } });
     }
 
-    timesheet.entries.push({
-      date: entryDate,
-      project,
-      typeOfWork,
-      taskDescription,
-      hoursWorked,
-    });
-    timesheet.updatedAt = new Date();
-    await timesheet.save();
+    const { error: insertError } = await getSupabaseAdmin()
+      .from("timesheet_entries")
+      .insert({
+        timesheet_id: id,
+        date: entryDate.toISOString(),
+        project,
+        type_of_work: typeOfWork,
+        task_description: taskDescription,
+        hours_worked: hoursWorked,
+      });
 
-    return NextResponse.json(timesheet);
+    if (insertError) {
+      throw insertError;
+    }
+
+    await getSupabaseAdmin()
+      .from("timesheets")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    const updatedTimesheet = await getOwnedTimesheet(id, session.user.id);
+    return NextResponse.json(updatedTimesheet);
   } catch (error) {
     console.error("Error creating entry:", error);
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "content-type": "application/json" } });
   }
 }
+
+

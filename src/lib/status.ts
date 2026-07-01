@@ -1,6 +1,6 @@
 export interface Entry {
   hoursWorked: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function getStatus(entries: Entry[]): 'Missing' | 'Incomplete' | 'Completed' {
@@ -78,3 +78,4 @@ export function formatWeekRange(startStr: string, endStr: string): string {
   
   return `${startDay}–${endDay} ${startMonth} ${startYear}`;
 }
+

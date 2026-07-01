@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-gray-50">
+    <div className="flex flex-col md:flex-row-reverse h-screen w-screen overflow-hidden bg-gray-50">
       {/* Left panel: Branding Banner */}
       <div className="w-full h-1/3 md:h-full md:w-1/2 bg-[#1C64F2] text-white flex flex-col justify-center p-8 md:p-16 lg:p-24 transition-all duration-500">
         <div className="max-w-md space-y-4">

@@ -1,4 +1,4 @@
-"use client";
+"use client";`r`n`r`n/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -64,7 +64,7 @@ export default function LoginForm() {
       } else {
         router.push(callbackUrl);
       }
-    } catch (err) {
+    } catch {
       setGeneralError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
@@ -133,3 +133,4 @@ export default function LoginForm() {
     </form>
   );
 }
+
