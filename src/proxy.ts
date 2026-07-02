@@ -9,7 +9,8 @@ export async function proxy(req: NextRequest) {
   });
 
   const { pathname } = req.nextUrl;
-
+  console.log('current token => ', token);
+  console.log('current pahtname -> ', pathname)
   // Redirect authenticated users away from login
   if (token && pathname === "/login") {
     return NextResponse.redirect(new URL("/timesheets", req.url));
