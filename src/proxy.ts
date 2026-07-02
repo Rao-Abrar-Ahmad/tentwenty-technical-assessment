@@ -3,17 +3,30 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function proxy(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  if (!token) {
-    if (req.nextUrl.pathname.startsWith("/api/")) {
-      return new NextResponse(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { "content-type": "application/json" } }
+  const { pathname } = req.nextUrl;
+
+  // Redirect authenticated users away from login
+  if (token && pathname === "/login") {
+    return NextResponse.redirect(new URL("/timesheets", req.url));
+  }
+
+  // Protect routes
+  if (!token && (pathname.startsWith("/timesheets") || pathname.startsWith("/api/timesheets"))) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
       );
     }
+
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+
     return NextResponse.redirect(loginUrl);
   }
 
@@ -22,6 +35,7 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/login",
     "/timesheets/:path*",
     "/api/timesheets/:path*",
   ],
