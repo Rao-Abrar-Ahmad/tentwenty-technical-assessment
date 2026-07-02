@@ -33,7 +33,7 @@ export default function DateRangeFilter({
               id="date"
               variant="outline"
               className={cn(
-                "w-[260px] justify-start text-left font-normal border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer",
+                "w-[260px] justify-start text-left font-normal rounded-sm border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer",
                 !date && "text-muted-foreground"
               )}
             />

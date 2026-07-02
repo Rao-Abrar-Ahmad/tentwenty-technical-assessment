@@ -39,43 +39,43 @@ export function getWeekStartAndEnd(year: number, weekNumber: number) {
 
 export function getWeeksInIntersection(from: Date, to: Date) {
   const weeks: Array<{ year: number; weekNumber: number; weekStart: Date; weekEnd: Date }> = [];
-  
+
   const fromWeek = getISOWeekDetails(from);
   const startWeekInfo = getWeekStartAndEnd(fromWeek.year, fromWeek.weekNumber);
-  
+
   let currentMonday = new Date(startWeekInfo.weekStart);
-  
+
   while (currentMonday <= to) {
     const { year, weekNumber } = getISOWeekDetails(currentMonday);
     const { weekStart, weekEnd } = getWeekStartAndEnd(year, weekNumber);
     weeks.push({ year, weekNumber, weekStart, weekEnd });
-    
+
     currentMonday = new Date(currentMonday.getTime() + 7 * 86400000);
   }
-  
+
   return weeks;
 }
 
 export function formatWeekRange(startStr: string, endStr: string): string {
   const start = new Date(startStr);
   const end = new Date(endStr);
-  
+
   const startDay = start.getUTCDate();
   const startMonth = start.toLocaleString("en-US", { month: "long", timeZone: "UTC" });
   const startYear = start.getUTCFullYear();
-  
+
   const endDay = end.getUTCDate();
   const endMonth = end.toLocaleString("en-US", { month: "long", timeZone: "UTC" });
   const endYear = end.getUTCFullYear();
-  
+
   if (startYear !== endYear) {
     return `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
   }
-  
+
   if (startMonth !== endMonth) {
     return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${startYear}`;
   }
-  
-  return `${startDay}–${endDay} ${startMonth} ${startYear}`;
+
+  return `${startDay}–${endDay} ${startMonth}, ${startYear}`;
 }
 

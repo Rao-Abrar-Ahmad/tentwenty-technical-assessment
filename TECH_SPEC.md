@@ -285,9 +285,9 @@ docs/adr/0002-eager-timesheet-creation.md
 
 ## 9. Reference documents
 
-- `CONTEXT.md` — canonical glossary (Timesheet, Entry, Status, Week, Row Action)
-- `docs/adr/0001-computed-status.md` — why Status is computed, not stored
-- `docs/adr/0002-eager-timesheet-creation.md` — why Timesheet docs are created eagerly on "Create" click, giving every detail-page route a real Supabase UUID
+- [docs/CONTEXT.md](docs/CONTEXT.md) — canonical glossary (Timesheet, Entry, Status, Week, Row Action)
+- [docs/0001-computed-status.md](docs/0001-computed-status.md) — why Status is computed, not stored
+- [docs/0002-eager-timesheet-creation.md](docs/0002-eager-timesheet-creation.md) — why Timesheet docs are created eagerly on "Create" click, giving every detail-page route a real Supabase UUID
 
 ## 10. Supabase setup
 

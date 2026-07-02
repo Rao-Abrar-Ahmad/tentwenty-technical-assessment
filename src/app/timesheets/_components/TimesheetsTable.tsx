@@ -87,20 +87,20 @@ export default function TimesheetsTable({
     switch (status) {
       case "Completed":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-100 text-green-800">
             Completed
           </span>
         );
       case "Incomplete":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">
             Incomplete
           </span>
         );
       case "Missing":
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-200">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-pink-100 text-pink-800">
             Missing
           </span>
         );
@@ -109,7 +109,7 @@ export default function TimesheetsTable({
 
   const getActionButton = (row: TimesheetRow, index: number) => {
     const isCreating = creatingRowIndex === index;
-    
+
     switch (row.action) {
       case "Create":
         return (
@@ -117,7 +117,8 @@ export default function TimesheetsTable({
             size="sm"
             onClick={() => handleAction(row, index)}
             disabled={isCreating}
-            className="bg-[#1C64F2] hover:bg-blue-700 text-white font-medium shadow-sm transition-all"
+            variant="link"
+            className="text-primary-600 font-normal"
           >
             {isCreating ? (
               <>
@@ -132,10 +133,10 @@ export default function TimesheetsTable({
       case "Update":
         return (
           <Button
-            variant="outline"
+            variant="link"
             size="sm"
             onClick={() => handleAction(row, index)}
-            className="border-blue-200 text-[#1C64F2] hover:bg-blue-50/50 hover:text-blue-700 font-medium transition-all"
+            className="text-primary-600 font-normal"
           >
             Update
           </Button>
@@ -144,10 +145,10 @@ export default function TimesheetsTable({
       default:
         return (
           <Button
-            variant="outline"
+            variant="link"
             size="sm"
             onClick={() => handleAction(row, index)}
-            className="border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all"
+            className="text-primary-600 font-normal transition-all"
           >
             View
           </Button>
@@ -156,11 +157,11 @@ export default function TimesheetsTable({
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-gray-150 bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-sm bg-white card-shadow">
       <Table>
-        <TableHeader className="bg-gray-50/75 select-none">
+        <TableHeader className="bg-gray-50 select-none text-xs text-gray-500">
           <TableRow>
-            <TableHead className="w-[150px] font-semibold text-gray-700">
+            <TableHead className="w-[150px]">
               <button
                 onClick={() => onSort("week")}
                 className="flex items-center hover:text-gray-900 font-semibold cursor-pointer"
@@ -168,7 +169,7 @@ export default function TimesheetsTable({
                 Week # {renderSortIcon("week")}
               </button>
             </TableHead>
-            <TableHead className="font-semibold text-gray-700">
+            <TableHead className="">
               <button
                 onClick={() => onSort("date")}
                 className="flex items-center hover:text-gray-900 font-semibold cursor-pointer"
@@ -176,7 +177,7 @@ export default function TimesheetsTable({
                 Date {renderSortIcon("date")}
               </button>
             </TableHead>
-            <TableHead className="w-[180px] font-semibold text-gray-700">
+            <TableHead className="w-[180px] ">
               <button
                 onClick={() => onSort("status")}
                 className="flex items-center hover:text-gray-900 font-semibold cursor-pointer"
@@ -184,7 +185,7 @@ export default function TimesheetsTable({
                 Status {renderSortIcon("status")}
               </button>
             </TableHead>
-            <TableHead className="w-[120px] font-semibold text-gray-700 text-right pr-6">
+            <TableHead className="w-[120px] text-center pr-6">
               Action
             </TableHead>
           </TableRow>
@@ -193,7 +194,7 @@ export default function TimesheetsTable({
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
-                <TableCell className="py-4">
+                <TableCell className="py-4 bg-gray-50">
                   <div className="h-4 bg-gray-100 rounded w-16 animate-pulse" />
                 </TableCell>
                 <TableCell className="py-4">
@@ -217,9 +218,9 @@ export default function TimesheetsTable({
             rows.map((row, index) => (
               <TableRow
                 key={`${row.year}-W${row.weekNumber}`}
-                className="hover:bg-gray-50/50 transition-colors"
+                className="hover:bg-gray-50/50 transition-colors text-sm"
               >
-                <TableCell className="font-medium text-gray-900 py-4">
+                <TableCell className=" text-gray-900 py-4 bg-gray-50">
                   Week {row.weekNumber}
                 </TableCell>
                 <TableCell className="text-gray-600 py-4">
@@ -228,7 +229,7 @@ export default function TimesheetsTable({
                 <TableCell className="py-4">
                   {getStatusBadge(row.status)}
                 </TableCell>
-                <TableCell className="text-right pr-6 py-4">
+                <TableCell className="text-right pr-6 py-4 text-center">
                   {getActionButton(row, index)}
                 </TableCell>
               </TableRow>

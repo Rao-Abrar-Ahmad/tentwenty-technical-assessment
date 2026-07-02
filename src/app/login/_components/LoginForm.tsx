@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { loginSchema } from "@/lib/zodSchemas";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { EyeIcon, EyeOffIcon, LoaderCircle } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function LoginForm() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [generalError, setGeneralError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
@@ -91,20 +93,30 @@ export default function LoginForm() {
         <label htmlFor="password" className="text-sm font-medium text-gray-700">
           Password
         </label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
-          disabled={loading}
-        />
-        {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+        <div className="relative">
+          <Input
+            id="password"
+            type={show ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => setShow(!show)}
+            className="absolute inset-y-0 right-0 cursor-pointer flex items-center pr-3 text-sm leading-5 text-gray-500 hover:text-gray-700"
+            tabIndex={-1}
+          >
+            {show ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
+          </button>
+          {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
-        <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer select-none">
+        <label className="flex items-center space-x-2 text-sm text-[#6B7280] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={rememberMe}
@@ -124,10 +136,11 @@ export default function LoginForm() {
 
       <Button
         type="submit"
-        className="w-full bg-[#1A56DB] hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors focus:ring-4 focus:ring-blue-300 disabled:opacity-50"
+        className="w-full btn-primary text-white font-medium py-2.5 transition-colors focus:ring-4 focus:ring-blue-300 disabled:opacity-50 flex justify-center items-center gap-3"
         disabled={loading}
       >
-        {loading ? "Signing in..." : "Sign in"}
+        Sign in
+        {loading && <LoaderCircle className="w-4 h-4 animate-spin" />}
       </Button>
     </form>
   );

@@ -9,25 +9,25 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-col md:flex-row-reverse h-screen w-screen overflow-hidden bg-gray-50">
+    <div className="flex flex-col-reverse md:flex-row-reverse h-screen w-screen overflow-hidden bg-gray-50">
       {/* Left panel: Branding Banner */}
-      <div className="w-full h-1/3 md:h-full md:w-1/2 bg-[#1C64F2] text-white flex flex-col justify-center p-8 md:p-16 lg:p-24 transition-all duration-500">
-        <div className="max-w-md space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-blue-500/25 px-3 py-1 rounded-full text-sm font-semibold tracking-wide backdrop-blur-sm border border-white/10">
-            <span>✨ Version 1.0</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-            Timesheet Management
+      <div className="hidden md:flex w-full h-full md:h-full md:w-1/2 bg-[#1C64F2] text-white flex flex-col justify-center p-8 md:p-16 transition-all duration-500">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+            ticktock
           </h1>
-          <p className="text-blue-100 text-sm md:text-base lg:text-lg leading-relaxed">
-            Keep track of your weekly tasks, log your project hours, and manage your progress effortlessly in one place.
+          <p className="text-[#E5E7EB] text-sm md:text-base leading-relaxed">
+            Introducing ticktock, our cutting-edge timesheet web application designed to revolutionize how you manage employee work hours. With ticktock, you can effortlessly track and monitor employee attendance and productivity from anywhere, anytime, using any internet-connected device.
           </p>
         </div>
       </div>
 
       {/* Right panel: Login Form */}
-      <div className="w-full h-2/3 md:h-full md:w-1/2 bg-white flex flex-col justify-center p-8 sm:p-16 lg:p-24 overflow-y-auto">
+      <div className="w-full h-full md:h-full md:w-1/2 bg-white flex flex-col justify-center p-8 sm:p-16 lg:p-24 overflow-y-auto">
         <div className="w-full max-w-md mx-auto space-y-8">
+          <h1 className="block md:hidden text-center text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+            ticktock
+          </h1>
           <div className="mb-3">
             <h2 className="text-xl font-bold tracking-tight text-gray-900">
               Welcome back

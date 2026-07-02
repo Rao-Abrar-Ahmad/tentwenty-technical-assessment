@@ -5,6 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --primary-600: #1C64F2;
+  --primary-100: #E1EFFE;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -46,6 +49,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
 }
 
 :root {
@@ -81,6 +85,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
 }
 
 .dark {
@@ -133,6 +138,26 @@
   .label {
     @apply text-sm font-medium text-foreground mb-1 block;
   }
+
+  .btn-primary {
+    @apply w-full !h-10 rounded-lg !bg-[#1A56DB] hover:bg-blue-700 py-2.5 px-5;
+  }
+
+  .text-primary-600 {
+    color: #1C64F2 !important;
+  }
+
+  .pagination-button {
+    border: 0 !important;
+    border-left: 1px solid var(--border) !important;
+  }
+
+  .pagination-wrapper {
+    button:last-child {
+      border: 0 !important;
+      border-left: 1px solid var(--border) !important;
+    }
+  }
 }
 
 /* Target autofilled fields across all major browsers */
@@ -149,4 +174,9 @@ input:autofill:focus {
   -webkit-box-shadow: 0 0 0px 0px #fff inset !important;
   box-shadow: 0 0 0px 0px #2a2a2a inset !important;
 
+}
+
+.card-shadow {
+  box-shadow: 0px 1px 2px -1px #0000001A;
+  box-shadow: 0px 1px 3px 0px #0000001A;
 }

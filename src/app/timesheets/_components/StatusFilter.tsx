@@ -17,7 +17,7 @@ interface StatusFilterProps {
 export default function StatusFilter({ status, setStatus }: StatusFilterProps) {
   return (
     <Select value={status} onValueChange={(val) => val !== null && setStatus(val)}>
-      <SelectTrigger className="w-[180px] border-gray-200 hover:bg-gray-50 transition-colors">
+      <SelectTrigger className="w-[180px] border-gray-200 hover:bg-gray-50 transition-colors rounded-sm">
         <SelectValue placeholder="Filter by status" />
       </SelectTrigger>
       <SelectContent>
