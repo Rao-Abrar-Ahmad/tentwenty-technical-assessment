@@ -33,8 +33,9 @@ export default function LoginPage() {
               Welcome back
             </h2>
           </div>
-
-          <Suspense fallback={<div className="text-gray-500 text-sm">Loading login form...</div>}>
+          <Suspense fallback={<div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          </div>}>
             <LoginForm />
           </Suspense>
         </div>
